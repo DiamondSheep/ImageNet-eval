@@ -11,8 +11,6 @@ import sys
 import os
 
 import model
-import utils.get_cifar100
-import utils.get_cifar10
 from utils.get_imagenet import get_train_dataloader, get_val_dataloader
 
 parser = argparse.ArgumentParser(description='Train and evaluate models for CIFAR100 in pytorch')
@@ -78,15 +76,14 @@ def evaluate(net, val_loader, criterion):
         losses.update(prec1.item(), input.size(0))
         top1.update(prec1.item(), input.size(0))
         top5.update(prec5.item(), input.size(0))
-        
-        print('batch:{}, top1: {top1.val:.3f}'.format(i, top1=top1))
 
-    print('Test: [{0}/{1}]\t'
-        'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-        'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-        'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-        i, len(val_loader), loss=losses,
-        top1=top1, top5=top5))
+        print('Test: [{0}/{1}]\t'
+            'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+            'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+            'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+            i, len(val_loader), 
+            loss=losses,
+            top1=top1, top5=top5))
     return top1.avg, top5.avg
 
 class AverageMeter(object):
@@ -125,15 +122,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     #load dataset
     print('Dataset: {}'.format(args.dataset))
-    if args.dataset == 'cifar10':
-        train_loader = utils.get_cifar10.get_training_dataloader(data_path=args.data_path, batch_size=args.batch_size, num_workers=args.n_workers)
-        val_loader = utils.get_cifar10.get_test_dataloader(data_path=args.data_path, batch_size=args.batch_size, num_workers=args.n_workers)
-        num_classes=10
-    elif args.dataset == 'cifar100':
-        train_loader = utils.get_cifar100.get_training_dataloader(data_path=args.data_path, batch_size=args.batch_size, num_workers=args.n_workers)
-        val_loader = utils.get_cifar100.get_test_dataloader(data_path=args.data_path, batch_size=args.batch_size, num_workers=args.n_workers)
-        num_classes=100
-    elif args.dataset == 'imagenet':
+    
+    if args.dataset == 'imagenet':
         train_loader = get_training_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers=args.n_workers,
                                                                     distributed=False)
         val_loader = get_test_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers = args.n_workers)
