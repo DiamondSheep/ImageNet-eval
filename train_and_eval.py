@@ -15,7 +15,6 @@ import utils.get_cifar100
 import utils.get_cifar10
 from utils.get_imagenet import get_train_dataloader, get_val_dataloader
 
-
 parser = argparse.ArgumentParser(description='Train and evaluate models for CIFAR100 in pytorch')
 parser.add_argument('--data-path', default='/gaoyangcheng/dataset/imagenet/', 
                     help='Path to dataset', type=str)
