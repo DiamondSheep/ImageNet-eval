@@ -20,8 +20,8 @@ parser.add_argument('--dataset', default='imagenet', type=str,
                     help='dataset to train or evaluate')
 parser.add_argument('--learning-rate', default=0.1, type=float, metavar='LR', 
                     help='initial learning rate(default: 0.1)')
-parser.add_argument('--batch-size', default=128, type=int, metavar='N',
-                    help='mini-batch size (default: 128)')
+parser.add_argument('--batch-size', default=256, type=int, metavar='N',
+                    help='mini-batch size (default: 256)')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum (default: 0.9)')
 parser.add_argument('--weight-decay', default=5e-4, type=float, metavar='W', 
@@ -124,9 +124,9 @@ if __name__ == '__main__':
     print('Dataset: {}'.format(args.dataset))
     
     if args.dataset == 'imagenet':
-        train_loader = get_training_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers=args.n_workers,
+        train_loader = get_train_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers=args.n_workers,
                                                                     distributed=False)
-        val_loader = get_test_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers = args.n_workers)
+        val_loader = get_val_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers = args.n_workers)
         num_classes = 1000
     #load model
     net_name = args.net
@@ -145,6 +145,7 @@ if __name__ == '__main__':
     
     if args.eval: #evaluate
         print('Evaluating started...')
+        print('Batchsize: {}'.format(args.batch_size))
         if args.path_model:
             PATH = os.path.join(args.path_model, '{}-{}-best.pth'.format(net_name, args.epochs))
             net.load_state_dict(torch.load(PATH))
