@@ -40,6 +40,69 @@ parser.add_argument('--path-model', default='', type=str,
 parser.add_argument('--eval', default=True, type=bool,
                     help='evaluate model')
 
+def main():
+    args = parser.parse_args()
+    #load dataset
+    print('Dataset: {}'.format(args.dataset))
+    
+    if args.dataset == 'imagenet':
+        train_loader = get_train_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers=args.n_workers,
+                                                                    distributed=False)
+        val_loader = get_val_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers = args.n_workers)
+        num_classes = 1000
+    #load model
+    net_name = args.net
+    print('Model: {}'.format(net_name))
+    net = model.__dict__[net_name](pretrained=args.eval, num_classes=num_classes)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+
+    #device
+    if torch.cuda.is_available():
+        net = net.cuda()
+        criterion = criterion.cuda()
+        #net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+        cudnn.benchmark = True
+    
+    if args.eval: #evaluate
+        print('Evaluating started...')
+        print('Batchsize: {}'.format(args.batch_size))
+        if args.path_model:
+            PATH = os.path.join(args.path_model, '{}-{}-best.pth'.format(net_name, args.epochs))
+            net.load_state_dict(torch.load(PATH))
+        evaluate(net, val_loader, criterion)
+        return
+    
+    else: #train
+        print('Hyperparameters:\nlr: {}, momentum: {}, weight_decay: {}'.format(args.learning_rate, args.momentum, args.weight_decay))
+        print('Training started...')
+        print('Epochs: {}'.format(args.epochs))\
+        
+        best_acc = 0.0
+        time_start = time.time()
+        for epoch in range(args.epochs):
+            train(net, train_loader, criterion, optimizer)
+            scheduler.step()
+            acc = evaluate(net, val_loader, criterion)
+            if epoch > 10 and best_acc < acc:
+                best_acc = acc
+                torch.save(net.state_dict(), os.path.join(args.path_save, 
+                            '{}-{}-best.pth'.format(net_name, args.epochs)))
+        time_end = time.time()
+        print('Training finished.')
+        print('TrainingTime: {:.3f}s.'.format(time_end - time_start))
+
+        if not os.path.exists(args.path_save):
+            os.mkdir(args.path_save)
+        PATH = os.path.join(args.path_save, '{}-{}.pth'.format(net_name, args.epochs))
+        print('Path: ' + PATH)
+        torch.save(net.state_dict(), PATH)
+        print('Path Saved.')
+        return
+
+# functions
+
 def train(net, trainloader, criterion, optimizer):
     running_loss = 0.0
     net.train()
@@ -118,62 +181,5 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 if __name__ == '__main__':
-    global args
-    args = parser.parse_args()
-    #load dataset
-    print('Dataset: {}'.format(args.dataset))
-    
-    if args.dataset == 'imagenet':
-        train_loader = get_train_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers=args.n_workers,
-                                                                    distributed=False)
-        val_loader = get_val_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers = args.n_workers)
-        num_classes = 1000
-    #load model
-    net_name = args.net
-    print('Model: {}'.format(net_name))
-    net = model.__dict__[net_name](pretrained=args.eval, num_classes=num_classes)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
-
-    #device
-    if torch.cuda.is_available():
-        net = net.cuda()
-        criterion = criterion.cuda()
-        #net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-        cudnn.benchmark = True
-    
-    if args.eval: #evaluate
-        print('Evaluating started...')
-        print('Batchsize: {}'.format(args.batch_size))
-        if args.path_model:
-            PATH = os.path.join(args.path_model, '{}-{}-best.pth'.format(net_name, args.epochs))
-            net.load_state_dict(torch.load(PATH))
-        evaluate(net, val_loader, criterion)
-    
-    else: #train
-        print('Hyperparameters:\nlr: {}, momentum: {}, weight_decay: {}'.format(args.learning_rate, args.momentum, args.weight_decay))
-        print('Training started...')
-        print('Epochs: {}'.format(args.epochs))\
-        
-        best_acc = 0.0
-        time_start = time.time()
-        for epoch in range(args.epochs):
-            train(net, train_loader, criterion, optimizer)
-            scheduler.step()
-            acc = evaluate(net, val_loader, criterion)
-            if epoch > 10 and best_acc < acc:
-                best_acc = acc
-                torch.save(net.state_dict(), os.path.join(args.path_save, 
-                            '{}-{}-best.pth'.format(net_name, args.epochs)))
-        time_end = time.time()
-        print('Training finished.')
-        print('TrainingTime: {:.3f}s.'.format(time_end - time_start))
-
-        if not os.path.exists(args.path_save):
-            os.mkdir(args.path_save)
-        PATH = os.path.join(args.path_save, '{}-{}.pth'.format(net_name, args.epochs))
-        print('Path: ' + PATH)
-        torch.save(net.state_dict(), PATH)
-        print('Path Saved.')
+    main()
 
