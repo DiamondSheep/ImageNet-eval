@@ -20,8 +20,8 @@ parser.add_argument('--dataset', default='imagenet', type=str,
                     help='dataset to train or evaluate')
 parser.add_argument('--learning-rate', default=0.1, type=float, metavar='LR', 
                     help='initial learning rate(default: 0.1)')
-parser.add_argument('--batch-size', default=256, type=int, metavar='N',
-                    help='mini-batch size (default: 256)')
+parser.add_argument('--batch-size', default=512, type=int, metavar='N',
+                    help='mini-batch size (default: 512)')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum (default: 0.9)')
 parser.add_argument('--weight-decay', default=5e-4, type=float, metavar='W', 
@@ -50,6 +50,7 @@ def main():
                                                                     distributed=False)
         val_loader = get_val_dataloader(data_path=args.data_path, batchsize=args.batch_size, num_workers = args.n_workers)
         num_classes = 1000
+
     #load model
     net_name = args.net
     print('Model: {}'.format(net_name))
