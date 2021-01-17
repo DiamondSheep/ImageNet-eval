@@ -4,12 +4,12 @@ import io
 import pickle
 from PIL import Image
 import numpy as np
-from torch.utils.data import DistributedSampler, Dataloader, Dataset
+from torch.utils.data import DistributedSampler
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, Dataset
 from utils.map_imagenet import label2num
 
-
-def get_training_dataloader(data_path, batchsize, num_workers, distributed=False):
+def get_train_dataloader(data_path, batchsize, num_workers, distributed=False):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                             std=[0.229, 0.224, 0.225])
     transform = transforms.Compose([
@@ -28,7 +28,7 @@ def get_training_dataloader(data_path, batchsize, num_workers, distributed=False
                             pin_memory=True, sampler=train_sampler)
     return train_loader
 
-def get_test_dataloader(data_path, batchsize, num_workers):
+def get_val_dataloader(data_path, batchsize, num_workers):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                             std=[0.229, 0.224, 0.225])
     transform = transforms.Compose([
@@ -37,10 +37,10 @@ def get_test_dataloader(data_path, batchsize, num_workers):
                             transforms.ToTensor(),
                             normalize,
                             ])
-    test_dataset = LMDBDatabase(lmdb_path=data_path, mode='val', transform=transform)
-    test_loader = DataLoader(test_dataset, batch_size=batchsize, 
+    val_dataset = LMDBDatabase(lmdb_path=data_path, mode='val', transform=transform)
+    val_loader = DataLoader(val_dataset, batch_size=batchsize, 
                             shuffle=False, num_workers=num_workers, pin_memory=True)
-    return test_loader
+    return val_loader
 
 lmdb_path = ' ' # YOUR LMDB PATH
 db_val_name = 'ILSVRC2012_img_val.lmdb'
